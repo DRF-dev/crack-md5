@@ -4,30 +4,35 @@ import (
 	"basic-password-breaker/internal"
 	"basic-password-breaker/pkg"
 	"fmt"
-	"log"
-	"math/rand"
-	"strings"
+	"github.com/gookit/color"
+	"os"
 	"time"
 )
 
+func getCrackingMethod(md5 string, dictionaryPath string, passwordLength int) (string, error) {
+	if dictionaryPath != "" {
+		return pkg.CrackDict(md5, dictionaryPath)
+	}
+	return pkg.CrackIncr(md5, passwordLength, []string{})
+}
+
 func main() {
-	password, err := internal.GetInput()
+	start := time.Now()
+
+	dictionaryPath, password, md5, passwordLength := internal.GetFlags()
+	if md5 == "" {
+		md5 = internal.ToMD5(password)
+		color.Greenf("[MD5 HASH]: %s (%s)\n", md5, password)
+		os.Exit(0)
+	}
+
+	result, err := getCrackingMethod(md5, dictionaryPath, passwordLength)
 	if err != nil {
-		log.Fatalln("Cannot scan the password write previously ...")
+		color.Redln(err)
+		os.Exit(1)
 	}
+	color.Greenf("Password found with success: %s (%s)\n", result, md5)
 
-	var result string
-	var currentLetter string
-	alphabet := pkg.GetAlphabet()
-	for _, letter := range strings.Split(password, "") {
-		for letter != currentLetter {
-			fmt.Println(result + currentLetter)
-			time.Sleep(5 * time.Millisecond)
-
-			randomIdx := rand.Intn(len(alphabet))
-			currentLetter = alphabet[randomIdx]
-		}
-		result += currentLetter
-	}
-	fmt.Println(result)
+	duration := time.Since(start)
+	fmt.Printf("Temps d'exécution : %s\n", duration)
 }
