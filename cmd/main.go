@@ -34,5 +34,5 @@ func main() {
 	color.Greenf("Password found with success: %s (%s)\n", result, md5)
 
 	duration := time.Since(start)
-	fmt.Printf("Temps d'exécution : %s\n", duration)
+	fmt.Printf("Execution time : %s\n", duration)
 }

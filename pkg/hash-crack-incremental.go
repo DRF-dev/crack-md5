@@ -19,7 +19,7 @@ func CrackIncr(md5 string, passwordLength int, currentPass []string) (string, er
 		for _, letter := range alphabet {
 			currentPass[passwordLength-1] = letter
 			cstr := strings.Join(currentPass, "")
-			fmt.Printf("[TENTATIVE] %s\n", cstr)
+			fmt.Printf("[ATTEMPS] %s\n", cstr)
 			currentMD5 := internal.ToMD5(cstr)
 			if currentMD5 == md5 {
 				return cstr, nil
