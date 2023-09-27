@@ -13,7 +13,7 @@ func getCrackingMethod(md5 string, dictionaryPath string, passwordLength int) (s
 	if dictionaryPath != "" {
 		return pkg.CrackDict(md5, dictionaryPath)
 	}
-	return pkg.CrackIncr(md5, passwordLength, []string{})
+	return pkg.CrackIncr(md5, passwordLength)
 }
 
 func main() {

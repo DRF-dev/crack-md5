@@ -2,37 +2,50 @@ package pkg
 
 import (
 	"basic-password-breaker/internal"
-	"fmt"
 	"strings"
 )
 
-func CrackIncr(md5 string, passwordLength int, currentPass []string) (string, error) {
+func GetCombination(passLength int, current []string, stack *[]string) {
 	alphabet := internal.GetAlphabet()
 
-	if passwordLength >= 1 {
-		if len(currentPass) == 0 {
-			c := strings.Repeat("a", passwordLength)
-			cs := strings.Split(c, "")
-			return CrackIncr(md5, passwordLength, cs)
-		}
-
+	if passLength >= 1 {
 		for _, letter := range alphabet {
-			currentPass[passwordLength-1] = letter
-			cstr := strings.Join(currentPass, "")
-			fmt.Printf("[ATTEMPS] %s\n", cstr)
-			currentMD5 := internal.ToMD5(cstr)
-			if currentMD5 == md5 {
-				return cstr, nil
-			}
-
-			res, _ := CrackIncr(md5, passwordLength-1, currentPass)
-			if res != "" {
-				return res, nil
-			}
+			current[passLength-1] = letter
+			str := strings.Join(current, "")
+			*stack = append(*stack, str)
+			GetCombination(passLength-1, current, stack)
 		}
 	}
+}
 
-	return "", &internal.CustomError{
-		Message: "Password does not found: size different than expected length",
+func worker(md5 string, currentPassChan chan string, resultChan chan string) {
+	for c := range currentPassChan {
+		currentMD5 := internal.ToMD5(c)
+		if currentMD5 == md5 {
+			resultChan <- c
+		}
 	}
+}
+
+func CrackIncr(md5 string, passLength int) (string, error) {
+	c := strings.Repeat("a", passLength)
+	cs := strings.Split(c, "")
+	stack := make([]string, 0)
+	GetCombination(passLength, cs, &stack)
+
+	const nbrWorkers int = 1000
+	currentPassChan := make(chan string)
+	resultChan := make(chan string)
+	defer close(resultChan)
+
+	for i := 0; i < nbrWorkers; i++ {
+		go worker(md5, currentPassChan, resultChan)
+	}
+
+	for _, s := range stack {
+		currentPassChan <- s
+	}
+	close(currentPassChan)
+
+	return <-resultChan, nil
 }
